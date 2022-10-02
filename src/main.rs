@@ -1,3 +1,8 @@
+use clap::Parser;
+
 fn main() {
-    println!("Hello, world!");
+    let config = quicksearch::cli::Args::parse();
+    if config.verbose {
+        println!("{:?}", config)
+    }
 }
