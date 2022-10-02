@@ -1,8 +1,13 @@
 use clap::Parser;
 
 fn main() {
-    let config = quicksearch::cli::Args::parse();
-    if config.verbose {
-        println!("{:?}", config)
+    let args = quicksearch::cli::Args::parse();
+    if args.verbose {
+        println!("{:?}", args)
+    }
+
+    match args.command {
+        quicksearch::cli::Command::List => todo!(),
+        quicksearch::cli::Command::Search(_) => todo!(),
     }
 }
