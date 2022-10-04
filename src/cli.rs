@@ -14,8 +14,12 @@ pub struct Args {
 #[derive(Subcommand, Debug)]
 pub enum Command {
     /// List available search engines
+    ///
+    /// engines will be listed as `keyword: url`
     List,
     /// Perform a search
+    ///
+    /// %s in the url will be replaced with your query
     ///
     /// For convenience you can set an alias in your shell.
     ///
