@@ -22,7 +22,7 @@ pub fn search(config: QuicksearchConfig, args: cli::Args) {
     };
     let url = match generate_url(&config, &search_args) {
         Ok(url) => url,
-        Err(_) => {
+        Err(EngineNotFound) => {
             eprintln!(
                 "Error: engine '{}' not found in config",
                 search_args.keyword
@@ -40,10 +40,15 @@ pub fn search(config: QuicksearchConfig, args: cli::Args) {
     };
 }
 
-pub fn generate_url(config: &QuicksearchConfig, args: &cli::SearchArgs) -> Result<String, ()> {
+pub struct EngineNotFound;
+
+pub fn generate_url(
+    config: &QuicksearchConfig,
+    args: &cli::SearchArgs,
+) -> Result<String, EngineNotFound> {
     let url = config.engines.get(&args.keyword);
     match url {
         Some(url) => Ok(url.replace("%s", &encode(&args.query.join(" ")))),
-        None => Err(()),
+        None => Err(EngineNotFound),
     }
 }
