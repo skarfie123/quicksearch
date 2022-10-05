@@ -8,5 +8,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.0.8", features = ["derive"] }
 config = "0.13.2"
+open = "3.0.3"
 serde = "1.0.145"
 serde_derive = "1.0.145"
+urlencoding = "2.1.2"

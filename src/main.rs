@@ -1,7 +1,7 @@
 use std::process::exit;
 
 use clap::Parser;
-use quicksearch::list;
+use quicksearch::{list, search};
 fn main() {
     let args = quicksearch::cli::Args::parse();
     if args.verbose {
@@ -24,6 +24,6 @@ fn main() {
 
     match args.command {
         quicksearch::cli::Command::List => list(config),
-        quicksearch::cli::Command::Search(_) => todo!(),
+        quicksearch::cli::Command::Search(_) => search(config, args),
     }
 }
