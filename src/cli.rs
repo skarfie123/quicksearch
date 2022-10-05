@@ -13,6 +13,8 @@ pub struct Args {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
+    /// Print the config path
+    Config,
     /// List available search engines
     ///
     /// engines will be listed as `keyword: url`

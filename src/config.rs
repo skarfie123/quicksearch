@@ -10,7 +10,7 @@ use crate::cli::Args;
 
 const DEFAULT_CONFIG: &str = include_str!("default.json");
 
-fn get_config_path() -> String {
+pub fn get_config_path() -> String {
     match env::consts::OS {
         "linux" | "macos" => format!(
             "{}/.config/quicksearch.json",

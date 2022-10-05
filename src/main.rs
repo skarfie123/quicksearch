@@ -25,5 +25,6 @@ fn main() {
     match args.command {
         quicksearch::cli::Command::List => list(config),
         quicksearch::cli::Command::Search(_) => search(config, args),
+        quicksearch::cli::Command::Config => println!("{}", quicksearch::config::get_config_path()),
     }
 }
