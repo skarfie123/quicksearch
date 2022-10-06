@@ -1,6 +1,6 @@
 # Quicksearch
 
-Configurable quick search engine shortcuts for your terminal.
+Configurable quick search engine shortcuts for your terminal and browser.
 
 ## Installation
 

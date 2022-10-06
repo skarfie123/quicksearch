@@ -12,6 +12,7 @@ repository = "https://github.com/skarfie123/quicksearch"
 clap = { version = "4.0.8", features = ["derive"] }
 config = "0.13.2"
 open = "3.0.3"
+rocket = "0.5.0-rc.2"
 serde = "1.0.145"
 serde_derive = "1.0.145"
 urlencoding = "2.1.2"

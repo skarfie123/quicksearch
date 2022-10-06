@@ -2,7 +2,19 @@ use std::process::exit;
 
 use clap::Parser;
 use quicksearch::{list, search, shell};
-fn main() {
+
+#[macro_use]
+extern crate rocket;
+
+use rocket::config::Config;
+
+#[get("/")]
+fn search_handler() -> &'static str {
+    "Hello, world!"
+}
+
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
     let args = quicksearch::cli::Args::parse();
     if args.verbose {
         println!("CLI Args: {:?}", args)
@@ -29,8 +41,16 @@ fn main() {
     match args.command {
         quicksearch::cli::Command::List => list(config),
         quicksearch::cli::Command::Search(_) => search(config, args),
+        quicksearch::cli::Command::Server(args) => {
+            let config = Config::figment().merge(("port", args.port));
+            let _rocket = rocket::custom(config)
+                .mount("/", routes![search_handler])
+                .launch()
+                .await?;
+        }
         quicksearch::cli::Command::Shell(_) => shell(config, args),
         // Config command is handled earlier
         quicksearch::cli::Command::Config => panic!("Unexpected command"),
     }
+    Ok(())
 }

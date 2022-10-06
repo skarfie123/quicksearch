@@ -27,6 +27,12 @@ pub enum Command {
     ///
     /// eg. for zsh: `alias q="quicksearch search"`
     Search(SearchArgs),
+    /// Start quicksearch server mode
+    ///
+    /// In this mode you can use quicksearch from your browser.
+    ///
+    /// Simply set `localhost:7878/%s` as a custom search engine in your browser.
+    Server(ServerArgs),
     /// Provide the commands for shell integration
     ///
     /// This needs to be used again every time the config is updated.
@@ -56,4 +62,11 @@ pub struct SearchArgs {
     pub keyword: String,
     /// query for the search engine
     pub query: Vec<String>,
+}
+
+#[derive(Parser, Debug)]
+pub struct ServerArgs {
+    /// keyword corresponding to a search engine
+    #[arg(default_value_t = 7878)]
+    pub port: u16,
 }
