@@ -15,6 +15,23 @@ pub fn list(config: QuicksearchConfig) {
     }
 }
 
+pub fn shell(config: QuicksearchConfig, args: cli::Args) {
+    let shell_args = match args.command {
+        cli::Command::Shell(args) => args,
+        _ => panic!("expected shell command"),
+    };
+    for keyword in config.engines.keys() {
+        match shell_args.shell_type {
+            cli::ShellType::BASH | cli::ShellType::FISH | cli::ShellType::ZSH => {
+                println!("alias {keyword}=\"quicksearch search {keyword}\"")
+            }
+            cli::ShellType::PWSH => {
+                println!("function {keyword} {{ quicksearch search {keyword} $args }}")
+            }
+        }
+    }
+}
+
 pub fn search(config: QuicksearchConfig, args: cli::Args) {
     let search_args = match args.command {
         cli::Command::Search(args) => args,

@@ -1,7 +1,7 @@
 use std::process::exit;
 
 use clap::Parser;
-use quicksearch::{list, search};
+use quicksearch::{list, search, shell};
 fn main() {
     let args = quicksearch::cli::Args::parse();
     if args.verbose {
@@ -29,6 +29,7 @@ fn main() {
     match args.command {
         quicksearch::cli::Command::List => list(config),
         quicksearch::cli::Command::Search(_) => search(config, args),
+        quicksearch::cli::Command::Shell(_) => shell(config, args),
         // Config command is handled earlier
         quicksearch::cli::Command::Config => panic!("Unexpected command"),
     }

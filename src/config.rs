@@ -29,7 +29,7 @@ pub fn parse_config() {}
 #[derive(Debug, Deserialize)]
 // #[allow(unused)]
 pub struct QuicksearchConfig {
-    /// map from keyword to url
+    /// Map from keyword to url
     pub engines: HashMap<String, String>,
 }
 

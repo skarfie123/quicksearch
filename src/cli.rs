@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 /// Quicksearch
 #[derive(Parser, Debug)]
@@ -27,6 +27,27 @@ pub enum Command {
     ///
     /// eg. for zsh: `alias q="quicksearch search"`
     Search(SearchArgs),
+    /// Provide the commands for shell integration
+    ///
+    /// This needs to be used again every time the config is updated.
+    ///
+    /// Eg. for zsh, put `eval "$(quicksearch shell zsh)"` in your ~/.zshrc so that it is
+    /// updated every time you restart your shell.
+    Shell(ShellArgs),
+}
+
+#[derive(Parser, Debug)]
+pub struct ShellArgs {
+    // #[arg(value_enum)]
+    pub shell_type: ShellType,
+}
+
+#[derive(Debug, ValueEnum, Clone)]
+pub enum ShellType {
+    BASH,
+    FISH,
+    PWSH,
+    ZSH,
 }
 
 #[derive(Parser, Debug)]
