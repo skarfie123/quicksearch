@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{collections::HashMap, process::exit};
 
 use urlencoding::encode;
 
@@ -37,7 +37,11 @@ pub fn search(config: QuicksearchConfig, args: cli::Args) {
         cli::Command::Search(args) => args,
         _ => panic!("expected search command"),
     };
-    let url = match generate_url(&config, &search_args) {
+    let url = match generate_url(
+        &config.engines,
+        &search_args.keyword,
+        &search_args.query.join(" "),
+    ) {
         Ok(url) => url,
         Err(EngineNotFound) => {
             eprintln!(
@@ -60,12 +64,13 @@ pub fn search(config: QuicksearchConfig, args: cli::Args) {
 pub struct EngineNotFound;
 
 pub fn generate_url(
-    config: &QuicksearchConfig,
-    args: &cli::SearchArgs,
+    engines: &HashMap<String, String>,
+    keyword: &str,
+    query: &str,
 ) -> Result<String, EngineNotFound> {
-    let url = config.engines.get(&args.keyword);
+    let url = engines.get(keyword);
     match url {
-        Some(url) => Ok(url.replace("%s", &encode(&args.query.join(" ")))),
+        Some(url) => Ok(url.replace("%s", &encode(query))),
         None => Err(EngineNotFound),
     }
 }

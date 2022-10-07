@@ -53,15 +53,13 @@ fn create_default_config(config_path: &str) {
 }
 
 impl QuicksearchConfig {
-    pub fn parse(args: &Args) -> Result<Self, ConfigError> {
+    fn _parse(args: &Args) -> Result<Self, ConfigError> {
         let config_path = get_config_path();
         if !Path::new(&config_path).exists() {
-            if args.verbose {
-                eprintln!(
-                    "{} does not exist, attempting to create config with defaults",
-                    config_path
-                );
-            }
+            println!(
+                "{} does not exist, creating config with defaults",
+                config_path
+            );
             create_default_config(&config_path);
             if args.verbose {
                 println!("Successfully wrote default config file");
@@ -77,5 +75,22 @@ impl QuicksearchConfig {
 
         // You can deserialize (and thus freeze) the entire configuration as
         s.try_deserialize()
+    }
+
+    pub fn parse(args: &Args) -> Result<Self, String> {
+        match Self::_parse(args) {
+            Ok(config) => Ok(config),
+            Err(e) => {
+                match e {
+                    config::ConfigError::FileParse { uri: _, cause } => {
+                        Err(format!("Error while parsing config: {cause}"))
+                    }
+                    config::ConfigError::Message(msg) => {
+                        Err(format!("Error while parsing config: {msg}"))
+                    } // at least Missing fields
+                    e => Err(format!("Unexpected error while parsing config: {e}")),
+                }
+            }
+        }
     }
 }

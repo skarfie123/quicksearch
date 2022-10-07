@@ -1,21 +1,54 @@
 use std::process::exit;
 
 use clap::Parser;
-use quicksearch::{list, search, shell};
+use quicksearch::{cli::Args, config::QuicksearchConfig, generate_url, list, search, shell};
 
 #[macro_use]
 extern crate rocket;
 
-use rocket::config::Config;
+use rocket::{config::Config, http::ContentType, State};
+
+#[get("/<full_query>")]
+fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, String) {
+    let (keyword, query) = match full_query.split_once(" ") {
+        Some(result) => result,
+        None => (full_query, ""),
+    };
+    let config = match QuicksearchConfig::parse(args_state.inner()) {
+        Ok(config) => config,
+        Err(msg) => return (ContentType::Plain, msg),
+    };
+    let url = match generate_url(&config.engines, keyword, query) {
+        Ok(url) => url,
+        Err(_) => return (ContentType::Plain, "Error: Engine not found".into()),
+    };
+    (
+        ContentType::HTML,
+        format!("<meta http-equiv=\"Refresh\" content=\"0; url='{url}'\" />"),
+    )
+}
 
 #[get("/")]
-fn search_handler() -> &'static str {
-    "Hello, world!"
+fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
+    let mut html = String::from("<h1>quicksearch</h1>");
+    let config_path = quicksearch::config::get_config_path();
+    html += &format!("<p>Config path: <code>{config_path}</code></p>");
+    let config = match QuicksearchConfig::parse(args_state.inner()) {
+        Ok(config) => config,
+        Err(msg) => return (ContentType::Plain, msg),
+    };
+    let mut keywords = config.engines.keys().collect::<Vec<_>>();
+    keywords.sort();
+    for keyword in keywords {
+        let url = config.engines.get(keyword).unwrap();
+        html += &format!("<p><code>{keyword} - {url}</code></p>")
+    }
+    (ContentType::HTML, html)
 }
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
-    let args = quicksearch::cli::Args::parse();
+    let args = Args::parse();
     if args.verbose {
         println!("CLI Args: {:?}", args)
     }
@@ -24,16 +57,10 @@ async fn main() -> Result<(), rocket::Error> {
         println!("{}", quicksearch::config::get_config_path());
         exit(0)
     }
-    let config = match quicksearch::config::QuicksearchConfig::parse(&args) {
+    let config = match QuicksearchConfig::parse(&args) {
         Ok(config) => config,
         Err(e) => {
-            match e {
-                config::ConfigError::FileParse { uri: _, cause } => {
-                    eprintln!("Error while parsing config: {cause}")
-                }
-                config::ConfigError::Message(msg) => eprintln!("Error while parsing config: {msg}"), // at least Missing fields
-                e => eprintln!("Unexpected error while parsing config: {e}"),
-            }
+            eprintln!("{e}");
             exit(1)
         }
     };
@@ -41,10 +68,11 @@ async fn main() -> Result<(), rocket::Error> {
     match args.command {
         quicksearch::cli::Command::List => list(config),
         quicksearch::cli::Command::Search(_) => search(config, args),
-        quicksearch::cli::Command::Server(args) => {
-            let config = Config::figment().merge(("port", args.port));
+        quicksearch::cli::Command::Serve(ref serve_args) => {
+            let config = Config::figment().merge(("port", serve_args.port));
             let _rocket = rocket::custom(config)
-                .mount("/", routes![search_handler])
+                .mount("/", routes![search_handler, help_handler])
+                .manage(args)
                 .launch()
                 .await?;
         }
