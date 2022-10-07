@@ -31,6 +31,7 @@ pub fn parse_config() {}
 pub struct QuicksearchConfig {
     /// Map from keyword to url
     pub engines: HashMap<String, String>,
+    pub default_engine: Option<String>,
 }
 
 pub enum QuicksearchConfigError {
@@ -79,7 +80,7 @@ impl QuicksearchConfig {
 
     pub fn parse(args: &Args) -> Result<Self, String> {
         match Self::_parse(args) {
-            Ok(config) => Ok(config),
+            Ok(config) => Self::validate(config),
             Err(e) => {
                 match e {
                     config::ConfigError::FileParse { uri: _, cause } => {
@@ -91,6 +92,15 @@ impl QuicksearchConfig {
                     e => Err(format!("Unexpected error while parsing config: {e}")),
                 }
             }
+        }
+    }
+
+    fn validate(config: Self) -> Result<Self, String> {
+        match config.default_engine {
+            Some(keyword) if !config.engines.contains_key(&keyword) => Err(format!(
+                "'{keyword}' set as default engine, but engine does not exist"
+            )),
+            _ => Ok(config),
         }
     }
 }

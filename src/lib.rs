@@ -61,6 +61,7 @@ pub fn search(config: QuicksearchConfig, args: cli::Args) {
     };
 }
 
+#[derive(Debug)]
 pub struct EngineNotFound;
 
 pub fn generate_url(

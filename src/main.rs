@@ -20,7 +20,10 @@ fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, S
     };
     let url = match generate_url(&config.engines, keyword, query) {
         Ok(url) => url,
-        Err(_) => return (ContentType::Plain, "Error: Engine not found".into()),
+        Err(_) => match config.default_engine {
+            Some(keyword) => generate_url(&config.engines, &keyword, full_query).unwrap(),
+            None => return (ContentType::Plain, "Error: Engine not found".into()),
+        },
     };
     (
         ContentType::HTML,
@@ -32,7 +35,7 @@ fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, S
 fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
     let mut html = String::from("<h1>quicksearch</h1>");
     let config_path = quicksearch::config::get_config_path();
-    html += &format!("<p>Config path: <code>{config_path}</code></p>");
+    html += &format!("<p>Config Path: <code>{config_path}</code></p>");
     let config = match QuicksearchConfig::parse(args_state.inner()) {
         Ok(config) => config,
         Err(msg) => return (ContentType::Plain, msg),
@@ -43,15 +46,16 @@ fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
         let url = config.engines.get(keyword).unwrap();
         html += &format!("<p><code>{keyword} - {url}</code></p>")
     }
+    match config.default_engine {
+        Some(keyword) => html += &format!("<p>Default Engine: <code>{keyword}</code></p>"),
+        _ => (),
+    }
     (ContentType::HTML, html)
 }
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
     let args = Args::parse();
-    if args.verbose {
-        println!("CLI Args: {:?}", args)
-    }
     // Handle this early as we shouldn't attempt to parse the config if the user just wants the path
     if let quicksearch::cli::Command::Config = args.command {
         println!("{}", quicksearch::config::get_config_path());
