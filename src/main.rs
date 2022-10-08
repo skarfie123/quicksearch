@@ -34,6 +34,15 @@ fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, S
 #[get("/")]
 fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
     let mut html = String::from("<h1>quicksearch</h1>");
+    html += &format!(
+        "<link
+    rel=\"search\"
+    type=\"application/opensearchdescription+xml\"
+    title=\"Quicksearch\"
+    href=\"/opensearch.xml\" />
+  "
+    );
+
     let config_path = quicksearch::config::get_config_path();
     html += &format!("<p>Config Path: <code>{config_path}</code></p>");
     let config = match QuicksearchConfig::parse(args_state.inner()) {
@@ -46,11 +55,24 @@ fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
         let url = config.engines.get(keyword).unwrap();
         html += &format!("<p><code>{keyword} - {url}</code></p>")
     }
-    match config.default_engine {
-        Some(keyword) => html += &format!("<p>Default Engine: <code>{keyword}</code></p>"),
-        _ => (),
+    if let Some(keyword) = config.default_engine {
+        html += &format!("<p>Default Engine: <code>{keyword}</code></p>")
     }
     (ContentType::HTML, html)
+}
+
+const OPENSEARCH_CONFIG: &str = include_str!("opensearch.xml");
+
+#[get("/opensearch.xml")]
+fn opensearch_handler(args_state: &State<Args>) -> (ContentType, String) {
+    let port = match args_state.command {
+        quicksearch::cli::Command::Serve(ref serve_args) => serve_args.port,
+        _ => return (ContentType::Plain, "Unexpected Error".into()),
+    };
+    (
+        ContentType::XML,
+        OPENSEARCH_CONFIG.replace("[PORT]", &port.to_string()),
+    )
 }
 
 #[rocket::main]
@@ -75,7 +97,10 @@ async fn main() -> Result<(), rocket::Error> {
         quicksearch::cli::Command::Serve(ref serve_args) => {
             let config = Config::figment().merge(("port", serve_args.port));
             let _rocket = rocket::custom(config)
-                .mount("/", routes![search_handler, help_handler])
+                .mount(
+                    "/",
+                    routes![search_handler, help_handler, opensearch_handler],
+                )
                 .manage(args)
                 .launch()
                 .await?;

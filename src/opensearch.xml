@@ -1,0 +1,12 @@
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/"
+                       xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+  <ShortName>Quicksearch</ShortName>
+  <Description>Quick search shortcuts for your browser and terminal</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Url type="text/html" template="http://localhost:[PORT]/{searchTerms}"/>
+  <Url type="application/opensearchdescription+xml"
+     rel="self"
+     template="http://localhost:[PORT]/opensearch.xml" />
+
+  <moz:SearchForm>http://localhost:[PORT]</moz:SearchForm>
+</OpenSearchDescription>
