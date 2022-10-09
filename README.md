@@ -63,3 +63,11 @@ Add quicksearch as a search engine, and set a keyword eg. `q` to use it easily. 
 At this point you can search YouTube with `q yt Never Gonna Give You Up`.
 
 If you set quicksearch to be your default search engine, then you can simply search `yt Never Gonna Give You Up`. But any unmatched query will direct to the quicksearch help page. It is recommended to set `default_engine` in your config, so that any unmatched queries will fall through to your default search engine.
+
+## Autostart Server
+
+### Linux
+
+One option is to add to your crontab:
+
+Run `crontab -e` to edit, then add `@reboot ~/.cargo/bin/quicksearch serve`.
