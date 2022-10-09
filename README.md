@@ -71,3 +71,10 @@ If you set quicksearch to be your default search engine, then you can simply sea
 One option is to add to your crontab:
 
 Run `crontab -e` to edit, then add `@reboot ~/.cargo/bin/quicksearch serve`.
+
+### Windows
+
+Open the startup folder (`Win+R` then run `shell:startup`).
+In this folder, add a shortcut with `pwsh -windowstyle hidden -c quicksearch serve` as the location. You may need to replace `pwsh` with `powershell` depending on your version.
+
+Alternatively, you could use Task Scheduler.
