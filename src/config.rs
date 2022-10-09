@@ -96,11 +96,21 @@ impl QuicksearchConfig {
     }
 
     fn validate(config: Self) -> Result<Self, String> {
-        match config.default_engine {
-            Some(keyword) if !config.engines.contains_key(&keyword) => Err(format!(
-                "'{keyword}' set as default engine, but engine does not exist"
-            )),
-            _ => Ok(config),
+        if let Some(ref keyword) = config.default_engine {
+            if !config.engines.contains_key(keyword) {
+                return Err(format!(
+                    "'{keyword}' set as default engine, but engine does not exist"
+                ));
+            }
         }
+
+        if config.engines.contains_key("help") {
+            return Err(
+                "'help' set as engine keyword, but it is reserved for the help page in server mode"
+                    .to_string(),
+            );
+        }
+
+        Ok(config)
     }
 }

@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::process::exit;
 
 use clap::Parser;
@@ -10,7 +11,7 @@ use rocket::{config::Config, http::ContentType, State};
 
 #[get("/<full_query>")]
 fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, String) {
-    let (keyword, query) = match full_query.split_once(" ") {
+    let (keyword, query) = match full_query.split_once(' ') {
         Some(result) => result,
         None => (full_query, ""),
     };
@@ -18,12 +19,16 @@ fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, S
         Ok(config) => config,
         Err(msg) => return (ContentType::Plain, msg),
     };
-    let url = match generate_url(&config.engines, keyword, query) {
-        Ok(url) => url,
-        Err(_) => match config.default_engine {
-            Some(keyword) => generate_url(&config.engines, &keyword, full_query).unwrap(),
-            None => return (ContentType::Plain, "Error: Engine not found".into()),
-        },
+    let url = if keyword == "help" {
+        String::from("/")
+    } else {
+        match generate_url(&config.engines, keyword, query) {
+            Ok(url) => url,
+            Err(_) => match config.default_engine {
+                Some(keyword) => generate_url(&config.engines, &keyword, full_query).unwrap(),
+                None => return (ContentType::Plain, "Error: Engine not found".into()),
+            },
+        }
     };
     (
         ContentType::HTML,
@@ -34,29 +39,31 @@ fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, S
 #[get("/")]
 fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
     let mut html = String::from("<h1>quicksearch</h1>");
-    html += &format!(
-        "<link
-    rel=\"search\"
-    type=\"application/opensearchdescription+xml\"
-    title=\"Quicksearch\"
-    href=\"/opensearch.xml\" />
-  "
-    );
+    write!(
+        &mut html,
+        r#"<link
+    rel="search"
+    type="application/opensearchdescription+xml"
+    title="Quicksearch"
+    href="/opensearch.xml" />"#
+    )
+    .unwrap();
 
     let config_path = quicksearch::config::get_config_path();
-    html += &format!("<p>Config Path: <code>{config_path}</code></p>");
+    write!(&mut html, "<p>Config Path: <code>{config_path}</code></p>").unwrap();
     let config = match QuicksearchConfig::parse(args_state.inner()) {
         Ok(config) => config,
         Err(msg) => return (ContentType::Plain, msg),
     };
     let mut keywords = config.engines.keys().collect::<Vec<_>>();
     keywords.sort();
+    write!(&mut html, "<p><code>help - </code> This page</p>").unwrap();
     for keyword in keywords {
         let url = config.engines.get(keyword).unwrap();
-        html += &format!("<p><code>{keyword} - {url}</code></p>")
+        write!(&mut html, "<p><code>{keyword} - {url}</code></p>").unwrap();
     }
     if let Some(keyword) = config.default_engine {
-        html += &format!("<p>Default Engine: <code>{keyword}</code></p>")
+        write!(&mut html, "<p>Default Engine: <code>{keyword}</code></p>").unwrap();
     }
     (ContentType::HTML, html)
 }
