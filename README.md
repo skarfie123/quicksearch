@@ -6,19 +6,30 @@ Configurable quick search engine shortcuts for your terminal and browser.
 
 Run `cargo install quicksearch` to install
 
+## Configuration
+
 Run `quicksearch config` to get the path to your config.
 
-## Usage
-
-With this example set up:
+Here is an example:
 
 ```json
 {
     "entries": {
-        "yt": "https://www.youtube.com/results?search_query=%s"
-    }
+        "google": "https://www.google.com/search?q=%s",
+        "yt": "https://www.youtube.com/results?search_query=%s",
+        "ddg": "https://duckduckgo.com/?q=%s"
+    },
+    "default_engine": "ddg"
 }
 ```
+
+`engines` are required. This is a map between keywords and the search urls. `%s` is what will be replaced with your query.
+
+`default_engine` is an optional setting for server mode that can be set to one of your engine keywords. If it is not set, unknown keywords will redirect to the quicksearch help page. With it set, your full query will be redirected to your default search engine. This allows you to use quicksearch as your default search engine in your browser.
+
+## Usage
+
+### Terminal
 
 You can search YouTube with: `quicksearch search yt Never Gonna Give You Up`
 
@@ -37,3 +48,13 @@ eval "$(quicksearch shell zsh)"
 ```
 
 Then you can simply search `yt Never Gonna Give You Up`!
+
+### Browser
+
+Run the server with `quicksearch serve`. By default the port is `7878`, but you can set it with `--port [PORT]`.
+
+Add quicksearch as a search engine, and set a keyword eg. `q` to use it easily. For Firefox see [here](https://support.mozilla.org/en-US/kb/add-or-remove-search-engine-firefox). For Chrome see [here](https://support.google.com/chrome/answer/95426) and set the url to `http://localhost:7878/%s` replacing `7878` with your chosen port.
+
+At this point you can search YouTube with `q yt Never Gonna Give You Up`.
+
+If you set quicksearch to be your default search engine, then you can simply search `yt Never Gonna Give You Up`. But any unmatched query will direct to the quicksearch help page. It is recommended to set `default_engine` in your config, so that any unmatched queries will fall through to your default search engine.
