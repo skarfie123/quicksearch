@@ -66,7 +66,7 @@ If you set quicksearch to be your default search engine, then you can simply sea
 
 ## Autostart Server
 
-### Linux
+### Linux / MacOS
 
 One option is to add to your crontab:
 
