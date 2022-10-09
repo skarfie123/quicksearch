@@ -2,6 +2,11 @@
 
 Configurable quick search engine shortcuts for your terminal and browser.
 
+[![Crates.io](https://img.shields.io/crates/v/quicksearch?style=flat-square)](https://crates.io/crates/quicksearch)
+[![Crates.io](https://img.shields.io/crates/d/quicksearch?style=flat-square)](https://crates.io/crates/quicksearch)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE-APACHE)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE-MIT)
+
 ## Installation
 
 Run `cargo install quicksearch` to install
