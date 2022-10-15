@@ -11,9 +11,10 @@ use rocket::{config::Config, http::ContentType, State};
 
 #[get("/<full_query>")]
 fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, String) {
+    let full_query = full_query.replace('+', " ");
     let (keyword, query) = match full_query.split_once(' ') {
-        Some(result) => result,
-        None => (full_query, ""),
+        Some((k, q)) => (k.to_string(), q),
+        None => (full_query.clone(), ""),
     };
     let config = match QuicksearchConfig::parse(args_state.inner()) {
         Ok(config) => config,
@@ -22,10 +23,10 @@ fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, S
     let url = if keyword == "help" {
         String::from("/")
     } else {
-        match generate_url(&config.engines, keyword, query) {
+        match generate_url(&config.engines, &keyword, query) {
             Ok(url) => url,
             Err(_) => match config.default_engine {
-                Some(keyword) => generate_url(&config.engines, &keyword, full_query).unwrap(),
+                Some(keyword) => generate_url(&config.engines, &keyword, &full_query).unwrap(),
                 None => return (ContentType::Plain, "Error: Engine not found".into()),
             },
         }
