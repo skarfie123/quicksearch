@@ -56,16 +56,48 @@ fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
         Ok(config) => config,
         Err(msg) => return (ContentType::Plain, msg),
     };
-    let mut keywords = config.engines.keys().collect::<Vec<_>>();
-    keywords.sort();
-    write!(&mut html, "<p><code>help - </code> This page</p>").unwrap();
-    for keyword in keywords {
-        let url = config.engines.get(keyword).unwrap();
-        write!(&mut html, "<p><code>{keyword} - {url}</code></p>").unwrap();
-    }
     if let Some(keyword) = config.default_engine {
         write!(&mut html, "<p>Default Engine: <code>{keyword}</code></p>").unwrap();
     }
+    write!(
+        &mut html,
+        "<table>
+            <thead>
+                <tr>
+                    <th>Keyword</th>
+                    <th>Name</th>
+                    <th>Url</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>help</code></td>
+                    <td>This Help Page</td>
+                </tr>"
+    )
+    .unwrap();
+    let mut keywords = config.engines.keys().collect::<Vec<_>>();
+    keywords.sort();
+    for keyword in keywords {
+        let engine = config.engines.get(keyword).unwrap();
+        let url = &engine.url;
+        let name = &engine.name;
+        write!(
+            &mut html,
+            "    <tr>
+                    <td><code>{keyword}</code></td>
+                    <td>{name}</td>
+                    <td><code>{url}</code></td>
+                </tr>"
+        )
+        .unwrap();
+    }
+    write!(
+        &mut html,
+        "    </tbody>
+        </table>"
+    )
+    .unwrap();
     (ContentType::HTML, html)
 }
 

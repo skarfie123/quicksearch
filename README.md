@@ -20,9 +20,18 @@ Here is an example:
 ```json
 {
     "entries": {
-        "google": "https://www.google.com/search?q=%s",
-        "yt": "https://www.youtube.com/results?search_query=%s",
-        "ddg": "https://duckduckgo.com/?q=%s"
+        "google": {
+            "name": "Google",
+            "url": "https://www.google.com/search?q=%s"
+        },
+        "yt": {
+            "name": "YouTube",
+            "url": "https://www.youtube.com/results?search_query=%s"
+        },
+        "ddg": {
+            "name": "DuckDuckGo",
+            "url": "https://duckduckgo.com/?q=%s"
+        }
     },
     "default_engine": "ddg"
 }

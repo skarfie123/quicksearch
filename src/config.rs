@@ -27,11 +27,19 @@ pub fn get_config_path() -> String {
 pub fn parse_config() {}
 
 #[derive(Debug, Deserialize)]
-// #[allow(unused)]
 pub struct QuicksearchConfig {
-    /// Map from keyword to url
-    pub engines: HashMap<String, String>,
+    /// Map from keyword to engine config
+    pub engines: HashMap<String, EngineConfig>,
+    /// engine to fall back to when the first work doesn't match an engine keyword
     pub default_engine: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EngineConfig {
+    /// name of engine
+    pub name: String,
+    /// url with %s to indicate search terms substitution
+    pub url: String,
 }
 
 pub enum QuicksearchConfigError {

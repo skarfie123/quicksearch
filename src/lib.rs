@@ -2,7 +2,7 @@ use std::{collections::HashMap, process::exit};
 
 use urlencoding::encode;
 
-use crate::config::QuicksearchConfig;
+use crate::config::{EngineConfig, QuicksearchConfig};
 
 pub mod cli;
 pub mod config;
@@ -11,7 +11,8 @@ pub fn list(config: QuicksearchConfig) {
     let mut keywords = config.engines.keys().collect::<Vec<_>>();
     keywords.sort();
     for keyword in keywords {
-        println!("{keyword}: {}", config.engines.get(keyword).unwrap());
+        let engine = config.engines.get(keyword).unwrap();
+        println!("{keyword}: {} - {}", engine.name, engine.url);
     }
 }
 
@@ -65,13 +66,13 @@ pub fn search(config: QuicksearchConfig, args: cli::Args) {
 pub struct EngineNotFound;
 
 pub fn generate_url(
-    engines: &HashMap<String, String>,
+    engines: &HashMap<String, EngineConfig>,
     keyword: &str,
     query: &str,
 ) -> Result<String, EngineNotFound> {
     let url = engines.get(keyword);
     match url {
-        Some(url) => Ok(url.replace("%s", &encode(query))),
+        Some(engine) => Ok(engine.url.replace("%s", &encode(query))),
         None => Err(EngineNotFound),
     }
 }
