@@ -48,7 +48,7 @@ pub enum QuicksearchConfigError {
 }
 
 fn create_default_config(config_path: &str) {
-    let mut file = match fs::File::create(&config_path) {
+    let mut file = match fs::File::create(config_path) {
         Ok(file) => file,
         Err(e) => {
             eprintln!("Error creating config file: {}", e);

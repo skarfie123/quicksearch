@@ -1,24 +1,30 @@
 use std::fmt::Write;
 use std::process::exit;
+use std::sync::Arc;
 
 use clap::Parser;
 use quicksearch::{cli::Args, config::QuicksearchConfig, generate_url, list, search, shell};
 
-#[macro_use]
-extern crate rocket;
+use axum::http::header::CONTENT_TYPE;
+use axum::{
+    extract::{Path, State},
+    response::{Html, IntoResponse, Redirect},
+    routing::get,
+    Router,
+};
 
-use rocket::{config::Config, http::ContentType, State};
-
-#[get("/<full_query>")]
-fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, String) {
+async fn search_handler(
+    Path(full_query): Path<String>,
+    State(args_state): State<Arc<Args>>,
+) -> impl IntoResponse {
     let full_query = full_query.replace('+', " ");
     let (keyword, query) = match full_query.split_once(' ') {
         Some((k, q)) => (k.to_string(), q),
         None => (full_query.clone(), ""),
     };
-    let config = match QuicksearchConfig::parse(args_state.inner()) {
+    let config = match QuicksearchConfig::parse(args_state.as_ref()) {
         Ok(config) => config,
-        Err(msg) => return (ContentType::Plain, msg),
+        Err(msg) => return ([(CONTENT_TYPE, "text/plain")], msg).into_response(),
     };
     let url = if keyword == "help" {
         String::from("/")
@@ -27,18 +33,20 @@ fn search_handler(full_query: &str, args_state: &State<Args>) -> (ContentType, S
             Ok(url) => url,
             Err(_) => match config.default_engine {
                 Some(keyword) => generate_url(&config.engines, &keyword, &full_query).unwrap(),
-                None => return (ContentType::Plain, "Error: Engine not found".into()),
+                None => {
+                    return (
+                        [(CONTENT_TYPE, "text/plain")],
+                        String::from("Error: Engine not found"),
+                    )
+                        .into_response()
+                }
             },
         }
     };
-    (
-        ContentType::HTML,
-        format!("<meta http-equiv=\"Refresh\" content=\"0; url='{url}'\" />"),
-    )
+    Redirect::temporary(&url).into_response()
 }
 
-#[get("/")]
-fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
+async fn help_handler(State(args_state): State<Arc<Args>>) -> impl IntoResponse {
     let mut html = String::from("<h1>quicksearch</h1>");
     write!(
         &mut html,
@@ -52,9 +60,9 @@ fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
 
     let config_path = quicksearch::config::get_config_path();
     write!(&mut html, "<p>Config Path: <code>{config_path}</code></p>").unwrap();
-    let config = match QuicksearchConfig::parse(args_state.inner()) {
+    let config = match QuicksearchConfig::parse(args_state.as_ref()) {
         Ok(config) => config,
-        Err(msg) => return (ContentType::Plain, msg),
+        Err(msg) => return ([(CONTENT_TYPE, "text/plain")], msg).into_response(),
     };
     if let Some(keyword) = config.default_engine {
         write!(&mut html, "<p>Default Engine: <code>{keyword}</code></p>").unwrap();
@@ -98,25 +106,30 @@ fn help_handler(args_state: &State<Args>) -> (ContentType, String) {
         </table>"
     )
     .unwrap();
-    (ContentType::HTML, html)
+    Html(html).into_response()
 }
 
 const OPENSEARCH_CONFIG: &str = include_str!("opensearch.xml");
-
-#[get("/opensearch.xml")]
-fn opensearch_handler(args_state: &State<Args>) -> (ContentType, String) {
+async fn opensearch_handler(State(args_state): State<Arc<Args>>) -> impl IntoResponse {
     let port = match args_state.command {
         quicksearch::cli::Command::Serve(ref serve_args) => serve_args.port,
-        _ => return (ContentType::Plain, "Unexpected Error".into()),
+        _ => {
+            return (
+                [(CONTENT_TYPE, "text/plain")],
+                String::from("Unexpected Error"),
+            )
+                .into_response()
+        }
     };
     (
-        ContentType::XML,
+        [(CONTENT_TYPE, "application/opensearchdescription+xml")],
         OPENSEARCH_CONFIG.replace("[PORT]", &port.to_string()),
     )
+        .into_response()
 }
 
-#[rocket::main]
-async fn main() -> Result<(), rocket::Error> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args = Args::parse();
     // Handle this early as we shouldn't attempt to parse the config if the user just wants the path
     if let quicksearch::cli::Command::Config = args.command {
@@ -135,15 +148,16 @@ async fn main() -> Result<(), rocket::Error> {
         quicksearch::cli::Command::List => list(config),
         quicksearch::cli::Command::Search(_) => search(config, args),
         quicksearch::cli::Command::Serve(ref serve_args) => {
-            let config = Config::figment().merge(("port", serve_args.port));
-            let _rocket = rocket::custom(config)
-                .mount(
-                    "/",
-                    routes![search_handler, help_handler, opensearch_handler],
-                )
-                .manage(args)
-                .launch()
-                .await?;
+            let serve_address = format!("0.0.0.0:{}", serve_args.port);
+            let shared = Arc::new(args);
+            let app = Router::new()
+                .route("/", get(help_handler))
+                .route("/{*full_query}", get(search_handler))
+                .route("/opensearch.xml", get(opensearch_handler))
+                .with_state(shared);
+
+            let listener = tokio::net::TcpListener::bind(serve_address).await.unwrap();
+            axum::serve(listener, app).await.unwrap();
         }
         quicksearch::cli::Command::Shell(_) => shell(config, args),
         // Config command is handled earlier
